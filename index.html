@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>တိရစ္ဆာန်လောင်းကစားဂိမ်း</title>
+    <title>တိရစ္ဆာန်လောင်းကစားဂိမ်း (၃၆ ကောင်)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .selected { border: 4px solid #F59E0B !important; transform: scale(1.02); }
@@ -15,7 +15,7 @@
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
     <div id="app" class="max-w-4xl mx-auto">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">တိရစ္ဆာန် လောင်းကစား</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">တိရစ္ဆာန် လောင်းကစား (၃၆ ကောင်)</h1>
 
         <div id="login-screen" class="bg-white p-6 rounded-2xl shadow-lg">
             <h2 class="text-xl font-bold mb-4 text-center">ကစားသူကို ရွေးချယ်ပါ</h2>
@@ -63,7 +63,7 @@
                 <p id="admin-status" class="mt-4 text-center font-bold text-yellow-400 bg-gray-900 py-2 rounded"></p>
             </div>
 
-            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8" id="animal-grid"></div>
+            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8" id="animal-grid"></div>
 
             <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
                 <button id="check-result-btn" disabled class="bg-gray-400 text-white py-4 px-8 rounded-full font-bold w-full text-lg shadow-lg mb-4">အဖြေစစ်ဆေးမည်</button>
@@ -94,10 +94,13 @@
             { id: 15, word: "ကျား" }, { id: 16, word: "ဝက်" }, { id: 17, word: "ဒေါင်း" },
             { id: 18, word: "ယုန်" }, { id: 19, word: "ခွေး" }, { id: 20, word: "ပုစွန်" },
             { id: 21, word: "ဆိတ်" }, { id: 22, word: "နွား" }, { id: 23, word: "ဖား" },
-            { id: 24, word: "ပျား" }, { id: 25, word: "ကြွက်" }, { id: 26, word: "ငါးရှဉ့်" }
+            { id: 24, word: "ပျား" }, { id: 25, word: "ကြွက်" }, { id: 26, word: "ငါးရှဉ့်" },
+            { id: 27, word: "ကျားသစ်" }, { id: 28, word: "ခြင်္သေ့" }, { id: 29, word: "သမင်" },
+            { id: 30, word: "ဝံပုလွေ" }, { id: 31, word: "လင်းယုန်" }, { id: 32, word: "ကြောင်" },
+            { id: 33, word: "ပုရွက်ဆိတ်" }, { id: 34, word: "ပိုးကောင်" }, { id: 35, word: "ငါး" }
         ];
 
-        let users = (JSON.parse(localStorage.getItem('animal_bet_users')) || []).filter(u => u.name !== 'Admin');
+        let users = JSON.parse(localStorage.getItem('animal_bet_users')) || [];
         let adminState = JSON.parse(localStorage.getItem('animal_admin_state')) || { isOpen: false, winnerId: null, totalBets: 0, totalPayouts: 0 };
         let currentUserIndex = -1;
         let isAdmin = false;
@@ -171,7 +174,6 @@
             });
             
             const btn = document.getElementById('check-result-btn');
-            // Can check results only if closed, not yet checked, and has placed bets
             if (!adminState.isOpen && !isAdmin && user.hasChecked === false && user.selections && Object.keys(user.selections).length > 0) {
                 btn.disabled = false;
                 btn.className = "bg-orange-500 hover:bg-orange-600 text-white py-4 px-8 rounded-full font-bold w-full text-lg shadow-lg mb-4";
@@ -197,15 +199,15 @@
                 const isWinner = !adminState.isOpen && adminState.winnerId === item.id;
                 
                 const div = document.createElement('div');
-                div.className = `bg-white p-4 rounded-xl shadow border transition flex flex-col items-center 
+                div.className = `bg-white p-3 rounded-lg shadow border transition flex flex-col items-center 
                                 ${adminState.isOpen && !isAdmin ? 'clickable' : ''}
                                 ${userBets > 0 ? 'selected' : 'border-gray-200'} 
                                 ${isWinner ? 'winner-bg' : ''}`;
                 
                 div.innerHTML = `
-                    <span class="font-bold text-lg">${item.word}</span>
-                    <span class="text-xs text-blue-600 mt-1">Total: ${totalBets}</span>
-                    <span class="text-sm font-bold mt-1 text-orange-600">${userBets > 0 ? 'My: ' + userBets : ''}</span>
+                    <span class="font-bold text-sm">${item.word}</span>
+                    <span class="text-[10px] text-blue-600 mt-1">Total: ${totalBets}</span>
+                    <span class="text-xs font-bold mt-1 text-orange-600">${userBets > 0 ? 'My: ' + userBets : ''}</span>
                 `;
                 if(adminState.isOpen && !isAdmin) {
                     div.addEventListener('click', () => addBet(item.id));
@@ -230,7 +232,7 @@
 
         document.getElementById('add-user-btn').addEventListener('click', () => {
             const name = document.getElementById('new-user-name').value;
-            if(name && name !== 'Admin' && !users.find(u => u.name === name)) {
+            if(name && !users.find(u => u.name === name)) {
                 users.push({ name: name, balance: 0, selections: {}, hasChecked: false });
                 saveState();
                 document.getElementById('new-user-name').value = '';
@@ -303,7 +305,7 @@
             const betOnWinner = user.selections[adminState.winnerId] || 0;
             
             if (betOnWinner > 0) {
-                const payout = betOnWinner * 27;
+                const payout = betOnWinner * 30; // Using 30x payout for 36 animals
                 user.balance += payout;
                 adminState.totalPayouts += payout;
                 document.getElementById('analysis-result').innerHTML = `<span class="text-green-600 font-bold">ဂုဏ်ယူပါတယ်! (${gameData[adminState.winnerId].word}) ပေါက်ပါသည်။ Coin ${payout} ရရှိပါသည်။</span>`;
