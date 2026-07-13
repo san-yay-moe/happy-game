@@ -11,7 +11,7 @@
         .hidden-ui { display: none !important; }
         .clickable:hover { cursor: pointer; transform: translateY(-2px); }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .scroll-area { max-height: 300px; overflow-y: auto; }
+        .scroll-area { max-height: 400px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
@@ -222,7 +222,7 @@
             });
             
             const btn = document.getElementById('check-result-btn');
-            if (!isAdmin && !adminState.isOpen && user && user.hasChecked === false && user.selections && Object.keys(user.selections).length > 0) {
+            if (!isAdmin && !adminState.isOpen && user && user.hasChecked === false) {
                 btn.disabled = false;
                 btn.className = "bg-orange-500 hover:bg-orange-600 text-white py-4 px-8 rounded-full font-bold w-full text-lg shadow-lg mb-4";
             } else {
@@ -272,7 +272,6 @@
             updateGameDisplay();
         }
 
-        // Logic for event listeners and UI
         document.getElementById('add-user-btn').addEventListener('click', () => {
             const name = document.getElementById('new-user-name').value;
             const pass = document.getElementById('new-user-pass').value;
@@ -347,15 +346,16 @@
 
         document.getElementById('check-result-btn').addEventListener('click', () => {
             const user = users[currentUserIndex];
-            const betOnWinner = user.selections[adminState.winnerId] || 0;
+            const winner = gameData.find(a => a.id === adminState.winnerId);
+            const betOnWinner = user.selections ? (user.selections[adminState.winnerId] || 0) : 0;
             
             if (betOnWinner > 0) {
                 const payout = betOnWinner * 30;
                 user.balance += payout;
                 adminState.totalPayouts += payout;
-                document.getElementById('analysis-result').innerHTML = `<span class="text-green-600 font-bold">ဂုဏ်ယူပါတယ်! (${gameData[adminState.winnerId].word}) ပေါက်ပါသည်။ Coin ${payout} ရရှိပါသည်။</span>`;
+                document.getElementById('analysis-result').innerHTML = `<span class="text-green-600 font-bold">ဂုဏ်ယူပါတယ်! (${winner.word}) ပေါက်ပါသည်။ Coin ${payout} ရရှိပါသည်။</span>`;
             } else {
-                document.getElementById('analysis-result').innerHTML = `<span class="text-red-600 font-bold">ကံမကောင်းလိုက်တာ! အနိုင်ရတဲ့အကောင်မှာ ${gameData[adminState.winnerId].word} ဖြစ်ပါတယ်။</span>`;
+                document.getElementById('analysis-result').innerHTML = `<span class="text-red-600 font-bold">ကံမကောင်းလိုက်ပါ! အနိုင်ရတဲ့အကောင်မှာ (${winner.word}) ဖြစ်ပါသည်။ (သင် ဒီအကောင်အတွက် လောင်းထားခြင်းမရှိပါ)</span>`;
             }
             user.hasChecked = true; 
             saveState();
