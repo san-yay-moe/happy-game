@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>တိရစ္ဆာန်လောင်းကစားဂိမ်း</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .selected { border: 4px solid #F59E0B !important; transform: scale(1.02); }
+        .winner-bg { background-color: #DEF7EC !important; border: 4px solid #059669 !important; }
+        .hidden-ui { display: none !important; }
+        .clickable:hover { cursor: pointer; transform: translateY(-2px); }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-4">
+    <div id="app" class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">တိရစ္ဆာန် လောင်းကစား</h1>
+
+        <div id="login-screen" class="bg-white p-6 rounded-2xl shadow-lg">
+            <h2 class="text-xl font-bold mb-4 text-center">ကစားသူကို ရွေးချယ်ပါ</h2>
+            <div id="user-list" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"></div>
+            
+            <div class="border-t pt-4">
+                <input type="text" id="new-user-name" class="p-3 border rounded w-full mb-2" placeholder="အသုံးပြုသူအမည် အသစ်ထည့်ရန်">
+                <button id="add-user-btn" class="bg-green-600 text-white w-full py-3 rounded-xl font-bold hover:bg-green-700 transition">Add User</button>
+            </div>
+            
+            <div class="mt-8 border-t pt-4 text-center">
+                <button id="admin-login-trigger" class="w-full bg-blue-100 text-blue-700 font-bold py-4 rounded-xl hover:bg-blue-200 transition">Admin အဖြစ် ဝင်ရောက်ရန်</button>
+            </div>
+        </div>
+
+        <div id="game-ui" class="hidden-ui">
+            <div class="bg-white p-4 rounded-xl shadow mb-6 flex justify-between items-center">
+                <div>
+                    <p id="current-user-display" class="text-xl font-bold text-gray-800"></p>
+                    <p class="text-blue-600 font-bold">Coin လက်ကျန်: <span id="coin-balance">0</span></p>
+                </div>
+                <button id="logout-btn" class="text-sm bg-gray-500 text-white px-4 py-2 rounded-lg font-bold">Log Out</button>
+            </div>
+
+            <div id="admin-panel" class="hidden-ui bg-gray-800 text-white p-6 rounded-xl mb-6 shadow-xl">
+                <h3 class="text-lg font-bold uppercase mb-4 text-yellow-400">Admin Panel</h3>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <button id="admin-open-btn" class="bg-green-600 py-3 rounded-lg font-bold hover:bg-green-700">ဂိမ်းစတင် (Open)</button>
+                    <button id="admin-close-btn" class="bg-red-600 py-3 rounded-lg font-bold hover:bg-red-700">ဂိမ်းပိတ် (Reveal)</button>
+                </div>
+                <div class="bg-gray-700 p-4 rounded-lg mb-6">
+                    <p class="text-sm font-bold text-gray-300">Round Stats:</p>
+                    <p>စုစုပေါင်း လောင်းကြေး: <span id="admin-total-bets" class="text-yellow-400 font-bold">0</span></p>
+                    <p>စုစုပေါင်း ပေးချေမှု: <span id="admin-total-payouts" class="text-green-400 font-bold">0</span></p>
+                </div>
+                <div class="border-t border-gray-600 pt-4">
+                    <h4 class="text-sm font-bold mb-2">User များသို့ Coin စီမံရန်</h4>
+                    <select id="user-select-admin" class="text-black p-3 rounded w-full mb-2 bg-gray-100"></select>
+                    <input type="number" id="coin-amount" class="text-black p-3 rounded w-full mb-2" placeholder="Coin ပမာဏ">
+                    <div class="flex gap-2">
+                        <button id="add-coin-btn" class="flex-1 bg-blue-600 py-3 rounded-lg font-bold hover:bg-blue-700">Coin ထည့်</button>
+                        <button id="sub-coin-btn" class="flex-1 bg-orange-600 py-3 rounded-lg font-bold hover:bg-orange-700">Coin နုတ်</button>
+                    </div>
+                </div>
+                <p id="admin-status" class="mt-4 text-center font-bold text-yellow-400 bg-gray-900 py-2 rounded"></p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-8" id="animal-grid"></div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
+                <button id="check-result-btn" disabled class="bg-gray-400 text-white py-4 px-8 rounded-full font-bold w-full text-lg shadow-lg mb-4">အဖြေစစ်ဆေးမည်</button>
+                <div id="analysis-result" class="text-lg font-bold text-blue-700 bg-blue-50 p-4 rounded-lg min-h-[50px]"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-modal" class="hidden-ui modal-overlay">
+        <div class="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4">
+            <h3 id="modal-title" class="text-lg font-bold mb-4"></h3>
+            <input type="password" id="modal-input" class="w-full p-3 border rounded-lg mb-4 hidden" placeholder="စကားဝှက်">
+            <div id="modal-message" class="mb-4 text-gray-700"></div>
+            <div class="flex gap-2">
+                <button id="modal-cancel" class="flex-1 py-3 bg-gray-200 rounded-lg hover:bg-gray-300 font-bold">ပိတ်မည်</button>
+                <button id="modal-confirm" class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold">အတည်ပြု</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameData = [
+            { id: 0, word: "မြင်း" }, { id: 1, word: "ရွှေနဂါး" }, { id: 2, word: "လိပ်ပြာ" },
+            { id: 3, word: "ဆတ်" }, { id: 4, word: "မြွေ" }, { id: 5, word: "မျောက်" },
+            { id: 6, word: "ပင့်ကူ" }, { id: 7, word: "ဗျိုင်း" }, { id: 8, word: "ငန်း" },
+            { id: 9, word: "ခရု" }, { id: 10, word: "ဆင်" }, { id: 11, word: "ရွှေငါး" },
+            { id: 12, word: "ကြက်" }, { id: 13, word: "လိပ်" }, { id: 14, word: "ကျီး" },
+            { id: 15, word: "ကျား" }, { id: 16, word: "ဝက်" }, { id: 17, word: "ဒေါင်း" },
+            { id: 18, word: "ယုန်" }, { id: 19, word: "ခွေး" }, { id: 20, word: "ပုစွန်" },
+            { id: 21, word: "ဆိတ်" }, { id: 22, word: "နွား" }, { id: 23, word: "ဖား" },
+            { id: 24, word: "ပျား" }, { id: 25, word: "ကြွက်" }, { id: 26, word: "ငါးရှဉ့်" }
+        ];
+
+        let users = (JSON.parse(localStorage.getItem('animal_bet_users')) || []).filter(u => u.name !== 'Admin');
+        let adminState = JSON.parse(localStorage.getItem('animal_admin_state')) || { isOpen: false, winnerId: null, totalBets: 0, totalPayouts: 0 };
+        let currentUserIndex = -1;
+        let isAdmin = false;
+
+        function showModal(title, message, isInput = false, onConfirm) {
+            const modal = document.getElementById('custom-modal');
+            const input = document.getElementById('modal-input');
+            const msg = document.getElementById('modal-message');
+            document.getElementById('modal-title').innerText = title;
+            msg.innerText = message;
+            if(isInput) {
+                input.classList.remove('hidden');
+                input.value = '';
+                input.type = 'password';
+            } else {
+                input.classList.add('hidden');
+            }
+            modal.classList.remove('hidden-ui');
+            
+            document.getElementById('modal-cancel').onclick = () => modal.classList.add('hidden-ui');
+            document.getElementById('modal-confirm').onclick = () => {
+                modal.classList.add('hidden-ui');
+                if(onConfirm) onConfirm(input.value);
+            };
+        }
+
+        function saveState() {
+            localStorage.setItem('animal_bet_users', JSON.stringify(users));
+            localStorage.setItem('animal_admin_state', JSON.stringify(adminState));
+        }
+
+        function renderUsers() {
+            const list = document.getElementById('user-list');
+            list.innerHTML = '';
+            users.forEach((u, i) => {
+                const btn = document.createElement('button');
+                btn.className = "bg-white p-4 rounded-xl font-bold user-card border-2 border-blue-200 hover:bg-blue-100 transition shadow-sm";
+                btn.innerText = u.name;
+                btn.addEventListener('click', () => login(i, false));
+                list.appendChild(btn);
+            });
+        }
+
+        function login(index, isAdm) {
+            currentUserIndex = index;
+            isAdmin = isAdm;
+            document.getElementById('login-screen').classList.add('hidden-ui');
+            document.getElementById('game-ui').classList.remove('hidden-ui');
+            document.getElementById('admin-panel').classList.toggle('hidden-ui', !isAdmin);
+            updateGameDisplay();
+        }
+
+        function updateGameDisplay() {
+            if(currentUserIndex === -1 && !isAdmin) return;
+            const user = isAdmin ? { name: 'Admin', balance: 999999 } : users[currentUserIndex];
+            
+            document.getElementById('current-user-display').innerText = `User: ${user.name}`;
+            document.getElementById('coin-balance').innerText = user.balance;
+            document.getElementById('admin-status').innerText = `Game Status: ${adminState.isOpen ? 'OPEN' : 'CLOSED'}`;
+            
+            document.getElementById('admin-total-bets').innerText = adminState.totalBets;
+            document.getElementById('admin-total-payouts').innerText = adminState.totalPayouts;
+            
+            const select = document.getElementById('user-select-admin');
+            select.innerHTML = '';
+            users.forEach((u, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.innerText = u.name;
+                select.appendChild(opt);
+            });
+            
+            const btn = document.getElementById('check-result-btn');
+            // Can check results only if closed, not yet checked, and has placed bets
+            if (!adminState.isOpen && !isAdmin && user.hasChecked === false && user.selections && Object.keys(user.selections).length > 0) {
+                btn.disabled = false;
+                btn.className = "bg-orange-500 hover:bg-orange-600 text-white py-4 px-8 rounded-full font-bold w-full text-lg shadow-lg mb-4";
+            } else {
+                btn.disabled = true;
+                btn.className = "bg-gray-400 text-white py-4 px-8 rounded-full font-bold w-full text-lg shadow-lg mb-4";
+            }
+            renderAnimals();
+        }
+
+        function renderAnimals() {
+            const grid = document.getElementById('animal-grid');
+            grid.innerHTML = '';
+            const user = isAdmin ? null : users[currentUserIndex];
+            
+            gameData.forEach((item) => {
+                let totalBets = 0;
+                users.forEach(u => {
+                    if (u.selections && u.selections[item.id]) totalBets += u.selections[item.id];
+                });
+                
+                const userBets = (user && user.selections && user.selections[item.id]) ? user.selections[item.id] : 0;
+                const isWinner = !adminState.isOpen && adminState.winnerId === item.id;
+                
+                const div = document.createElement('div');
+                div.className = `bg-white p-4 rounded-xl shadow border transition flex flex-col items-center 
+                                ${adminState.isOpen && !isAdmin ? 'clickable' : ''}
+                                ${userBets > 0 ? 'selected' : 'border-gray-200'} 
+                                ${isWinner ? 'winner-bg' : ''}`;
+                
+                div.innerHTML = `
+                    <span class="font-bold text-lg">${item.word}</span>
+                    <span class="text-xs text-blue-600 mt-1">Total: ${totalBets}</span>
+                    <span class="text-sm font-bold mt-1 text-orange-600">${userBets > 0 ? 'My: ' + userBets : ''}</span>
+                `;
+                if(adminState.isOpen && !isAdmin) {
+                    div.addEventListener('click', () => addBet(item.id));
+                }
+                grid.appendChild(div);
+            });
+        }
+
+        function addBet(id) {
+            const user = users[currentUserIndex];
+            if(user.balance < 1) {
+                showModal("သတိပေးချက်", "Coin မလုံလောက်ပါ!");
+                return;
+            }
+            
+            if(!user.selections) user.selections = {};
+            user.selections[id] = (user.selections[id] || 0) + 1;
+            user.balance -= 1;
+            saveState();
+            updateGameDisplay();
+        }
+
+        document.getElementById('add-user-btn').addEventListener('click', () => {
+            const name = document.getElementById('new-user-name').value;
+            if(name && name !== 'Admin' && !users.find(u => u.name === name)) {
+                users.push({ name: name, balance: 0, selections: {}, hasChecked: false });
+                saveState();
+                document.getElementById('new-user-name').value = '';
+                renderUsers();
+            }
+        });
+
+        document.getElementById('admin-login-trigger').addEventListener('click', () => {
+            showModal("Admin ဝင်ရောက်ရန်", "စကားဝှက်ရိုက်ထည့်ပါ", true, (val) => {
+                if(val === 'admin') {
+                    login(0, true);
+                } else {
+                    showModal("အမှား", "စကားဝှက် မှားယွင်းနေပါသည်။");
+                }
+            });
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            currentUserIndex = -1;
+            isAdmin = false;
+            document.getElementById('login-screen').classList.remove('hidden-ui');
+            document.getElementById('game-ui').classList.add('hidden-ui');
+            renderUsers();
+        });
+
+        document.getElementById('admin-open-btn').addEventListener('click', () => {
+            adminState.isOpen = true;
+            adminState.winnerId = Math.floor(Math.random() * gameData.length);
+            adminState.totalBets = 0;
+            adminState.totalPayouts = 0;
+            users.forEach(u => { u.selections = {}; u.hasChecked = false; });
+            saveState();
+            updateGameDisplay();
+            document.getElementById('analysis-result').innerHTML = "";
+        });
+
+        document.getElementById('admin-close-btn').addEventListener('click', () => {
+            adminState.isOpen = false;
+            let total = 0;
+            users.forEach(u => {
+                if(u.selections) Object.values(u.selections).forEach(count => total += count);
+            });
+            adminState.totalBets = total;
+            saveState();
+            updateGameDisplay();
+        });
+
+        document.getElementById('add-coin-btn').addEventListener('click', () => {
+            const idx = document.getElementById('user-select-admin').value;
+            const amt = parseInt(document.getElementById('coin-amount').value);
+            if(!isNaN(amt) && idx !== "") {
+                users[idx].balance += amt;
+                saveState();
+                updateGameDisplay();
+            }
+        });
+        
+        document.getElementById('sub-coin-btn').addEventListener('click', () => {
+            const idx = document.getElementById('user-select-admin').value;
+            const amt = parseInt(document.getElementById('coin-amount').value);
+            if(!isNaN(amt) && idx !== "") {
+                users[idx].balance = Math.max(0, users[idx].balance - amt);
+                saveState();
+                updateGameDisplay();
+            }
+        });
+
+        document.getElementById('check-result-btn').addEventListener('click', () => {
+            const user = users[currentUserIndex];
+            const betOnWinner = user.selections[adminState.winnerId] || 0;
+            
+            if (betOnWinner > 0) {
+                const payout = betOnWinner * 27;
+                user.balance += payout;
+                adminState.totalPayouts += payout;
+                document.getElementById('analysis-result').innerHTML = `<span class="text-green-600 font-bold">ဂုဏ်ယူပါတယ်! (${gameData[adminState.winnerId].word}) ပေါက်ပါသည်။ Coin ${payout} ရရှိပါသည်။</span>`;
+            } else {
+                document.getElementById('analysis-result').innerHTML = `<span class="text-red-600 font-bold">ကံမကောင်းလိုက်တာ! အနိုင်ရတဲ့အကောင်မှာ ${gameData[adminState.winnerId].word} ဖြစ်ပါတယ်။</span>`;
+            }
+            user.hasChecked = true; 
+            saveState();
+            updateGameDisplay();
+        });
+
+        renderUsers();
+    </script>
+</body>
+</html>
