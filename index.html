@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>တိရစ္ဆာန်လောင်းကစားဂိမ်း (၃၆ ကောင်)</title>
+    <title>တိရစ္ဆာန်လောင်းကစား (၃၆ ကောင်)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .selected { border: 4px solid #F59E0B !important; transform: scale(1.02); }
@@ -50,18 +50,7 @@
                     <button id="admin-open-btn" class="bg-green-600 py-3 rounded-lg font-bold hover:bg-green-700">ဂိမ်းစတင် (Open)</button>
                     <button id="admin-close-btn" class="bg-red-600 py-3 rounded-lg font-bold hover:bg-red-700">ဂိမ်းပိတ် (Reveal)</button>
                 </div>
-                <div class="bg-gray-700 p-4 rounded-lg mb-6">
-                    <p class="text-sm font-bold text-gray-300">Round Stats:</p>
-                    <p>စုစုပေါင်း လောင်းကြေး: <span id="admin-total-bets" class="text-yellow-400 font-bold">0</span></p>
-                    <p>စုစုပေါင်း ပေးချေမှု: <span id="admin-total-payouts" class="text-green-400 font-bold">0</span></p>
-                </div>
                 
-                <!-- Animal Stats -->
-                <div class="bg-gray-900 p-4 rounded-lg mb-6 scroll-area">
-                    <h4 class="text-sm font-bold mb-2 text-yellow-400">တိရစ္ဆာန်အလိုက် လောင်းကြေး:</h4>
-                    <div id="admin-animal-stats" class="grid grid-cols-2 gap-2 text-xs"></div>
-                </div>
-
                 <div class="border-t border-gray-600 pt-4">
                     <h4 class="text-sm font-bold mb-2">User များသို့ Coin စီမံရန်</h4>
                     <select id="user-select-admin" class="text-black p-3 rounded w-full mb-2 bg-gray-100"></select>
@@ -112,7 +101,7 @@
         ];
 
         let users = JSON.parse(localStorage.getItem('animal_bet_users')) || [];
-        let adminState = JSON.parse(localStorage.getItem('animal_admin_state')) || { isOpen: false, winnerId: null, totalBets: 0, totalPayouts: 0 };
+        let adminState = JSON.parse(localStorage.getItem('animal_admin_state')) || { isOpen: false, winnerId: null };
         let currentUserIndex = -1;
         let isAdmin = false;
 
@@ -188,29 +177,6 @@
             document.getElementById('current-user-display').innerText = isAdmin ? 'Admin' : (user ? `User: ${user.name}` : '');
             document.getElementById('coin-balance').innerText = isAdmin ? '-' : (user ? user.balance : 0);
             document.getElementById('admin-status').innerText = `Game Status: ${adminState.isOpen ? 'OPEN' : 'CLOSED'}`;
-            document.getElementById('admin-total-bets').innerText = adminState.totalBets;
-            document.getElementById('admin-total-payouts').innerText = adminState.totalPayouts;
-            
-            // Render Admin Animal Stats
-            if(isAdmin) {
-                const statsContainer = document.getElementById('admin-animal-stats');
-                statsContainer.innerHTML = '';
-                const animalTotals = {};
-                users.forEach(u => {
-                    if(u.selections) {
-                        for(let id in u.selections) {
-                            animalTotals[id] = (animalTotals[id] || 0) + u.selections[id];
-                        }
-                    }
-                });
-                gameData.forEach(item => {
-                    const total = animalTotals[item.id] || 0;
-                    const div = document.createElement('div');
-                    div.className = "flex justify-between p-1 bg-gray-800 rounded";
-                    div.innerHTML = `<span>${item.word}</span> <span class="font-bold text-yellow-400">${total}</span>`;
-                    statsContainer.appendChild(div);
-                });
-            }
 
             const select = document.getElementById('user-select-admin');
             select.innerHTML = '';
@@ -272,97 +238,91 @@
             updateGameDisplay();
         }
 
-        document.getElementById('add-user-btn').addEventListener('click', () => {
-            const name = document.getElementById('new-user-name').value;
-            const pass = document.getElementById('new-user-pass').value;
-            if(name && pass && !users.find(u => u.name === name)) {
-                users.push({ name: name, password: pass, balance: 0, selections: {}, hasChecked: false });
-                saveState();
-                document.getElementById('new-user-name').value = '';
-                document.getElementById('new-user-pass').value = '';
-                renderUsers();
-            }
-        });
+        document.addEventListener('DOMContentLoaded', () => {
+            renderUsers();
 
-        document.getElementById('admin-login-trigger').addEventListener('click', () => {
-            showModal("Admin ဝင်ရောက်ရန်", "စကားဝှက်ရိုက်ထည့်ပါ", true, (val) => {
-                if(val === 'admin') {
-                    loginAdmin();
-                } else {
-                    showModal("အမှား", "စကားဝှက် မှားယွင်းနေပါသည်။");
+            document.getElementById('add-user-btn').addEventListener('click', () => {
+                const name = document.getElementById('new-user-name').value;
+                const pass = document.getElementById('new-user-pass').value;
+                if(name && pass && !users.find(u => u.name === name)) {
+                    users.push({ name: name, password: pass, balance: 0, selections: {}, hasChecked: false });
+                    saveState();
+                    document.getElementById('new-user-name').value = '';
+                    document.getElementById('new-user-pass').value = '';
+                    renderUsers();
                 }
             });
-        });
 
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            currentUserIndex = -1;
-            isAdmin = false;
-            document.getElementById('login-screen').classList.remove('hidden-ui');
-            document.getElementById('game-ui').classList.add('hidden-ui');
-            renderUsers();
-        });
-
-        document.getElementById('admin-open-btn').addEventListener('click', () => {
-            adminState.isOpen = true;
-            adminState.winnerId = Math.floor(Math.random() * gameData.length);
-            adminState.totalBets = 0;
-            adminState.totalPayouts = 0;
-            users.forEach(u => { u.selections = {}; u.hasChecked = false; });
-            saveState();
-            updateGameDisplay();
-            document.getElementById('analysis-result').innerHTML = "";
-        });
-
-        document.getElementById('admin-close-btn').addEventListener('click', () => {
-            adminState.isOpen = false;
-            let total = 0;
-            users.forEach(u => {
-                if(u.selections) Object.values(u.selections).forEach(count => total += count);
+            document.getElementById('admin-login-trigger').addEventListener('click', () => {
+                showModal("Admin ဝင်ရောက်ရန်", "စကားဝှက်ရိုက်ထည့်ပါ", true, (val) => {
+                    if(val === 'admin') {
+                        loginAdmin();
+                    } else {
+                        showModal("အမှား", "စကားဝှက် မှားယွင်းနေပါသည်။");
+                    }
+                });
             });
-            adminState.totalBets = total;
-            saveState();
-            updateGameDisplay();
-        });
 
-        document.getElementById('add-coin-btn').addEventListener('click', () => {
-            const idx = document.getElementById('user-select-admin').value;
-            const amt = parseInt(document.getElementById('coin-amount').value);
-            if(!isNaN(amt) && idx !== "") {
-                users[idx].balance += amt;
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                currentUserIndex = -1;
+                isAdmin = false;
+                document.getElementById('login-screen').classList.remove('hidden-ui');
+                document.getElementById('game-ui').classList.add('hidden-ui');
+                renderUsers();
+            });
+
+            document.getElementById('admin-open-btn').addEventListener('click', () => {
+                adminState.isOpen = true;
+                adminState.winnerId = Math.floor(Math.random() * gameData.length);
+                users.forEach(u => { u.selections = {}; u.hasChecked = false; });
                 saveState();
                 updateGameDisplay();
-            }
-        });
-        
-        document.getElementById('sub-coin-btn').addEventListener('click', () => {
-            const idx = document.getElementById('user-select-admin').value;
-            const amt = parseInt(document.getElementById('coin-amount').value);
-            if(!isNaN(amt) && idx !== "") {
-                users[idx].balance = Math.max(0, users[idx].balance - amt);
+                document.getElementById('analysis-result').innerHTML = "";
+            });
+
+            document.getElementById('admin-close-btn').addEventListener('click', () => {
+                adminState.isOpen = false;
                 saveState();
                 updateGameDisplay();
-            }
-        });
+            });
 
-        document.getElementById('check-result-btn').addEventListener('click', () => {
-            const user = users[currentUserIndex];
-            const winner = gameData.find(a => a.id === adminState.winnerId);
-            const betOnWinner = user.selections ? (user.selections[adminState.winnerId] || 0) : 0;
+            document.getElementById('add-coin-btn').addEventListener('click', () => {
+                const idx = document.getElementById('user-select-admin').value;
+                const amt = parseInt(document.getElementById('coin-amount').value);
+                if(!isNaN(amt) && idx !== "") {
+                    users[idx].balance += amt;
+                    saveState();
+                    updateGameDisplay();
+                }
+            });
             
-            if (betOnWinner > 0) {
-                const payout = betOnWinner * 30;
-                user.balance += payout;
-                adminState.totalPayouts += payout;
-                document.getElementById('analysis-result').innerHTML = `<span class="text-green-600 font-bold">ဂုဏ်ယူပါတယ်! (${winner.word}) ပေါက်ပါသည်။ Coin ${payout} ရရှိပါသည်။</span>`;
-            } else {
-                document.getElementById('analysis-result').innerHTML = `<span class="text-red-600 font-bold">ကံမကောင်းလိုက်ပါ! အနိုင်ရတဲ့အကောင်မှာ (${winner.word}) ဖြစ်ပါသည်။ (သင် ဒီအကောင်အတွက် လောင်းထားခြင်းမရှိပါ)</span>`;
-            }
-            user.hasChecked = true; 
-            saveState();
-            updateGameDisplay();
-        });
+            document.getElementById('sub-coin-btn').addEventListener('click', () => {
+                const idx = document.getElementById('user-select-admin').value;
+                const amt = parseInt(document.getElementById('coin-amount').value);
+                if(!isNaN(amt) && idx !== "") {
+                    users[idx].balance = Math.max(0, users[idx].balance - amt);
+                    saveState();
+                    updateGameDisplay();
+                }
+            });
 
-        renderUsers();
+            document.getElementById('check-result-btn').addEventListener('click', () => {
+                const user = users[currentUserIndex];
+                const winner = gameData.find(a => a.id === adminState.winnerId);
+                const betOnWinner = user.selections ? (user.selections[adminState.winnerId] || 0) : 0;
+                
+                if (betOnWinner > 0) {
+                    const payout = betOnWinner * 30;
+                    user.balance += payout;
+                    document.getElementById('analysis-result').innerHTML = `<span class="text-green-600 font-bold">ဂုဏ်ယူပါတယ်! (${winner.word}) ပေါက်ပါသည်။ Coin ${payout} ရရှိပါသည်။</span>`;
+                } else {
+                    document.getElementById('analysis-result').innerHTML = `<span class="text-red-600 font-bold">ကံမကောင်းလိုက်ပါ! အနိုင်ရတဲ့အကောင်မှာ (${winner.word}) ဖြစ်ပါသည်။ (သင် ဒီအကောင်အတွက် လောင်းထားခြင်းမရှိပါ)</span>`;
+                }
+                user.hasChecked = true; 
+                saveState();
+                updateGameDisplay();
+            });
+        });
     </script>
 </body>
 </html>
