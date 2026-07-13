@@ -11,6 +11,7 @@
         .hidden-ui { display: none !important; }
         .clickable:hover { cursor: pointer; transform: translateY(-2px); }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .scroll-area { max-height: 300px; overflow-y: auto; }
     </style>
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
@@ -54,6 +55,13 @@
                     <p>စုစုပေါင်း လောင်းကြေး: <span id="admin-total-bets" class="text-yellow-400 font-bold">0</span></p>
                     <p>စုစုပေါင်း ပေးချေမှု: <span id="admin-total-payouts" class="text-green-400 font-bold">0</span></p>
                 </div>
+                
+                <!-- Animal Stats -->
+                <div class="bg-gray-900 p-4 rounded-lg mb-6 scroll-area">
+                    <h4 class="text-sm font-bold mb-2 text-yellow-400">တိရစ္ဆာန်အလိုက် လောင်းကြေး:</h4>
+                    <div id="admin-animal-stats" class="grid grid-cols-2 gap-2 text-xs"></div>
+                </div>
+
                 <div class="border-t border-gray-600 pt-4">
                     <h4 class="text-sm font-bold mb-2">User များသို့ Coin စီမံရန်</h4>
                     <select id="user-select-admin" class="text-black p-3 rounded w-full mb-2 bg-gray-100"></select>
@@ -183,6 +191,27 @@
             document.getElementById('admin-total-bets').innerText = adminState.totalBets;
             document.getElementById('admin-total-payouts').innerText = adminState.totalPayouts;
             
+            // Render Admin Animal Stats
+            if(isAdmin) {
+                const statsContainer = document.getElementById('admin-animal-stats');
+                statsContainer.innerHTML = '';
+                const animalTotals = {};
+                users.forEach(u => {
+                    if(u.selections) {
+                        for(let id in u.selections) {
+                            animalTotals[id] = (animalTotals[id] || 0) + u.selections[id];
+                        }
+                    }
+                });
+                gameData.forEach(item => {
+                    const total = animalTotals[item.id] || 0;
+                    const div = document.createElement('div');
+                    div.className = "flex justify-between p-1 bg-gray-800 rounded";
+                    div.innerHTML = `<span>${item.word}</span> <span class="font-bold text-yellow-400">${total}</span>`;
+                    statsContainer.appendChild(div);
+                });
+            }
+
             const select = document.getElementById('user-select-admin');
             select.innerHTML = '';
             users.forEach((u, idx) => {
@@ -243,6 +272,7 @@
             updateGameDisplay();
         }
 
+        // Logic for event listeners and UI
         document.getElementById('add-user-btn').addEventListener('click', () => {
             const name = document.getElementById('new-user-name').value;
             const pass = document.getElementById('new-user-pass').value;
